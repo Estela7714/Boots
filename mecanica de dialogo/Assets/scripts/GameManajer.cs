@@ -1,31 +1,45 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.InputSystem;
+using System.Collections; // Importante para o IEnumerator funcionar
 
-public enum GameState { Iniciando, MenuPrincipal, Gameplay }
+// O ENUM PRECISA FICAR FORA DA CLASSE (AQUI NO TOPO)
+// Se ele estiver dentro de chaves erradas, dá erro em todo o projeto.
+public enum GameState 
+{ 
+    Iniciando, 
+    MenuPrincipal, 
+    Gameplay 
+}
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
+    
     [SerializeField] private GameState currentState;
 
     private void Awake()
     {
-        if (Instance == null) { Instance = this; DontDestroyOnLoad(gameObject); }
-        else { Destroy(gameObject); }
+        if (Instance == null) 
+        { 
+            Instance = this; 
+            DontDestroyOnLoad(gameObject); 
+        }
+        else 
+        { 
+            Destroy(gameObject); 
+        }
     }
 
     private void Start()
     {
-        // O próprio GM decide começar assim
         ProcessarMudancaDeFase("Splash", GameState.Iniciando);
     }
 
-    // Centralizamos a mudança aqui. Ninguém mais toca no SceneManager ou no State.
     private void ProcessarMudancaDeFase(string nomeCena, GameState novoEstado)
     {
         currentState = novoEstado;
-        Debug.Log($"<color=orange>[GM]</color> Mudando para Cena: <b>{nomeCena}</b> | Estado: <b>{novoEstado}</b>");
+        Debug.Log("[GM] Mudando para Cena: " + nomeCena + " | Estado: " + novoEstado.ToString());
         SceneManager.LoadScene(nomeCena);
     }
 
@@ -38,7 +52,23 @@ public class GameManager : MonoBehaviour
 
     public void SolicitarIniciarJogo()
     {
-        ProcessarMudancaDeFase("SampleScene", GameState.Gameplay);
+        // Chama a corrotina usando o nome exato da função abaixo
+        StartCoroutine(CarregarJogoEInterface());
+    }
+
+    // Corrotina para carregar a cena e depois a interface de moedas
+    private IEnumerator CarregarJogoEInterface()
+    {
+        currentState = GameState.Gameplay;
+        Debug.Log("[GM] Mudando para Estado: " + currentState.ToString());
+        
+        SceneManager.LoadScene("SampleScene");
+
+        // Espera 1 frame para a SampleScene carregar antes de puxar a GUI
+        yield return null; 
+
+        SceneManager.LoadScene("GUI", LoadSceneMode.Additive);
+        Debug.Log("[GM] Interface (GUI) carregada em modo Aditivo.");
     }
 
     public void AssignPlayerInput(PlayerInput input)

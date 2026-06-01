@@ -2,12 +2,6 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 // Controlador para jogo tipo Roll-a-Ball usando o novo Input System.
-// Instruções rápidas:
-// 1) Adicione este script no GameObject do jogador (a esfera).
-// 2) Certifique-se de que o GameObject tem um Rigidbody (use Freeze Rotation em X/Y/Z se quiser evitar que a bola tombe).
-// 3) No inspector, arraste a ação 'Move' do seu asset InputSystem_Actions (tipo Vector2) para o campo "Move Action".
-// 4) Ajuste 'speed' e 'maxSpeed' conforme necessário.
-
 public class PlayerController : MonoBehaviour
 {
     [Header("Input")]
@@ -22,6 +16,9 @@ public class PlayerController : MonoBehaviour
     [Tooltip("Se verdadeiro usa AddForce, senão define diretamente a velocidade horizontal")]
     public bool useForce = true;
 
+    [Header("Gameplay (Moedas)")]
+    [SerializeField] private int moedasAtuais = 0; // Armazena a quantidade de moedas coletadas
+
     Rigidbody rb;
 
     void Awake()
@@ -30,6 +27,19 @@ public class PlayerController : MonoBehaviour
         if (rb == null)
         {
             Debug.LogError("PlayerController: Rigidbody não encontrado no GameObject. Adicione um Rigidbody.");
+        }
+    }
+
+    void Start()
+    {
+        // Aloca o componente PlayerInput no GameManager (conforme pedido na primeira atividade)
+        if (GameManager.Instance != null)
+        {
+            PlayerInput inputComponent = GetComponent<PlayerInput>();
+            if (inputComponent != null)
+            {
+                GameManager.Instance.AssignPlayerInput(inputComponent);
+            }
         }
     }
 
@@ -78,5 +88,20 @@ public class PlayerController : MonoBehaviour
             rb.linearVelocity = new Vector3(targetVel.x, rb.linearVelocity.y, targetVel.z);
         }
     }
-}
 
+    // --- ADICIONADO PARA A ATIVIDADE DE MOEDAS ---
+
+    /// <summary>
+    /// Função chamada pela Moeda ao colidir com o jogador.
+    /// Incrementa o contador e dispara a notificação para a interface (Observer).
+    /// </summary>
+    public void AdicionarMoeda(int quantidade)
+    {
+        moedasAtuais += quantidade;
+        
+        // NOTIFICAÇÃO: Dispara o evento estático avisando a UI o novo total
+        PlayerObserverManager.DispararMoedaColetada(moedasAtuais);
+        
+        Debug.Log($"[Player] Moeda coletada! Total atual: {moedasAtuais}");
+    }
+}
